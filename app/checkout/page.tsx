@@ -1,76 +1,100 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useEffect, useMemo, useState } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { CheckCircle2, ChevronLeft } from "lucide-react"
+import type React from "react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { CheckCircle2, ChevronLeft } from "lucide-react";
 
-import { useCartStore } from "@/lib/cart-utils"
-import type { CartItem, Product } from "@/lib/types"
+import { useCartStore } from "@/lib/cart-utils";
+import type { CartItem, Product } from "@/lib/types";
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 type CheckoutFormState = {
-  email: string
-  phone: string
-  firstName: string
-  lastName: string
-  address: string
-  city: string
-  zip: string
-  notes: string
-}
+  email: string;
+  phone: string;
+  firstName: string;
+  lastName: string;
+  address: string;
+  city: string;
+  zip: string;
+  notes: string;
+};
 
 function buildWhatsAppUrl(opts: { phoneE164: string; message: string }) {
-  const base = `https://wa.me/${opts.phoneE164}`
-  const text = encodeURIComponent(opts.message)
-  return `${base}?text=${text}`
+  const base = `https://wa.me/${opts.phoneE164}`;
+  const text = encodeURIComponent(opts.message);
+  return `${base}?text=${text}`;
 }
 
 function getBaseUrl() {
-  // .env.local: NEXT_PUBLIC_SITE_URL="https://yourdomain.com"
-  return (process.env.NEXT_PUBLIC_SITE_URL || "").replace(/\/$/, "")
+  return (process.env.NEXT_PUBLIC_SITE_URL || "").replace(/\/$/, "");
 }
 
 function productPath(p: Product) {
-  // Adjust if your route differs
-  return `/products/${encodeURIComponent(p.slug)}`
+  return `/products/${encodeURIComponent(p.slug)}`;
 }
 
 function productUrl(p: Product) {
-  const base = getBaseUrl()
-  const path = productPath(p)
-  return base ? `${base}${path}` : path
+  const base = getBaseUrl();
+  const path = productPath(p);
+  return base ? `${base}${path}` : path;
 }
 
 function formatMoneyFromCents(cents: number, currency: string) {
-  const amount = cents / 100
+  const amount = cents / 100;
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: currency || "USD",
-  }).format(amount)
+  }).format(amount);
 }
 
 async function fetchProducts(): Promise<Product[]> {
-  // Uses the API route described above
-  const res = await fetch("/api/products", { cache: "no-store" })
-  if (!res.ok) throw new Error("Failed to load products")
-  return (await res.json()) as Product[]
+  const res = await fetch("/api/products", { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to load products");
+  return (await res.json()) as Product[];
+}
+
+async function logCheckoutStarted(input: {
+  cartCount: number;
+  subtotalCents: number;
+  items: Array<{
+    product_id: string;
+    slug: string;
+    name: string;
+    quantity: number;
+    price_cents: number;
+    currency: string;
+    product_url: string;
+  }>;
+  message?: string;
+}) {
+  const res = await fetch("/api/checkout-event", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...input, channel: "whatsapp" }),
+    keepalive: true,
+  });
+
+  if (!res.ok) {
+    const payload = await res.text();
+    console.error("checkout-event failed", res.status, payload);
+  }
 }
 
 export default function CheckoutPage() {
-  const { items: cartLines, clearCart } = useCartStore()
-  const router = useRouter()
+  const { items: cartLines, clearCart } = useCartStore();
+  const router = useRouter();
 
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isSuccess, setIsSuccess] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
-  const [products, setProducts] = useState<Product[]>([])
-  const [productsError, setProductsError] = useState<string | null>(null)
+  const [products, setProducts] = useState<Product[]>([]);
+  const [productsError, setProductsError] = useState<string | null>(null);
 
   const [form, setForm] = useState<CheckoutFormState>({
     email: "",
@@ -81,101 +105,114 @@ export default function CheckoutPage() {
     city: "",
     zip: "",
     notes: "",
-  })
+  });
 
-  // Load products so we can hydrate cart lines -> full product details
   useEffect(() => {
-    let mounted = true
+    let mounted = true;
     fetchProducts()
       .then((p) => {
-        if (!mounted) return
-        setProducts(p)
-        setProductsError(null)
+        if (!mounted) return;
+        setProducts(p);
+        setProductsError(null);
       })
       .catch((err) => {
-        if (!mounted) return
-        setProducts([])
-        setProductsError(err instanceof Error ? err.message : "Failed to load products")
-      })
+        if (!mounted) return;
+        setProducts([]);
+        setProductsError(
+          err instanceof Error ? err.message : "Failed to load products"
+        );
+      });
     return () => {
-      mounted = false
-    }
-  }, [])
+      mounted = false;
+    };
+  }, []);
 
   useEffect(() => {
-    if (cartLines.length === 0 && !isSuccess) router.push("/products")
-  }, [cartLines.length, isSuccess, router])
+    if (cartLines.length === 0 && !isSuccess) router.push("/products");
+  }, [cartLines.length, isSuccess, router]);
 
-  const waNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || ""
-  const brand = process.env.NEXT_PUBLIC_BRAND_NAME || "Store"
+  const waNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "";
+  const brand = process.env.NEXT_PUBLIC_BRAND_NAME || "Store";
 
-  // ✅ Hydrate cart lines to your shared CartItem type (extends Product)
   const hydratedCart = useMemo<CartItem[]>(() => {
-    if (!cartLines.length || !products.length) return []
+    if (!cartLines.length || !products.length) return [];
 
-    const map = new Map(products.map((p) => [p.id, p] as const))
+    const map = new Map(products.map((p) => [p.id, p] as const));
 
     return cartLines
       .map((line) => {
-        const p = map.get(line.productId)
-        if (!p) return null
-        return { ...p, quantity: line.quantity }
+        const p = map.get(line.productId);
+        if (!p) return null;
+        return { ...p, quantity: line.quantity };
       })
-      .filter((x): x is CartItem => Boolean(x))
-  }, [cartLines, products])
+      .filter((x): x is CartItem => Boolean(x));
+  }, [cartLines, products]);
 
   const totals = useMemo(() => {
-    const subtotalCents = hydratedCart.reduce((sum, it) => sum + it.price_cents * it.quantity, 0)
-    // assuming same currency for all items; fallback to USD
-    const currency = hydratedCart[0]?.currency || "USD"
-    return { subtotalCents, currency }
-  }, [hydratedCart])
+    const subtotalCents = hydratedCart.reduce(
+      (sum, it) => sum + it.price_cents * it.quantity,
+      0
+    );
+    const currency = hydratedCart[0]?.currency || "USD";
+    return { subtotalCents, currency };
+  }, [hydratedCart]);
 
   const orderSummary = useMemo(() => {
-    if (!cartLines.length) return "Cart is empty."
+    if (!cartLines.length) return "Cart is empty.";
 
-    // If products failed to load, still send something useful
     if (!hydratedCart.length) {
       return cartLines
-        .map((l, idx) => `${idx + 1}. Product ID: ${l.productId}\nQty: ${l.quantity}`)
-        .join("\n\n")
+        .map(
+          (l, idx) =>
+            `${idx + 1}. Product ID: ${l.productId}\nQty: ${l.quantity}`
+        )
+        .join("\n\n");
     }
 
     return hydratedCart
       .map((it, idx) => {
-        const unit = formatMoneyFromCents(it.price_cents, it.currency)
-        const lineTotal = formatMoneyFromCents(it.price_cents * it.quantity, it.currency)
-        const link = productUrl(it)
+        const unit = formatMoneyFromCents(it.price_cents, it.currency);
+        const lineTotal = formatMoneyFromCents(
+          it.price_cents * it.quantity,
+          it.currency
+        );
+        const link = productUrl(it);
 
         return [
           `${idx + 1}. ${it.name}`,
           `Qty: ${it.quantity} | Unit: ${unit} | Total: ${lineTotal}`,
           `Link: ${link}`,
-        ].join("\n")
+        ].join("\n");
       })
-      .join("\n\n")
-  }, [cartLines, hydratedCart])
+      .join("\n\n");
+  }, [cartLines, hydratedCart]);
 
   const handleChange =
     (key: keyof CheckoutFormState) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      setForm((prev) => ({ ...prev, [key]: e.target.value }))
-    }
+      setForm((prev) => ({ ...prev, [key]: e.target.value }));
+    };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  // ✅ UPDATED: make submit async so we can log before redirect
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
     if (!waNumber) {
-      alert("WhatsApp number is not configured. Set NEXT_PUBLIC_WHATSAPP_NUMBER.")
-      return
+      alert(
+        "WhatsApp number is not configured. Set NEXT_PUBLIC_WHATSAPP_NUMBER."
+      );
+      return;
     }
 
-    setIsSubmitting(true)
+    setIsSubmitting(true);
 
     const subtotalLine =
       hydratedCart.length > 0
-        ? `Subtotal: ${formatMoneyFromCents(totals.subtotalCents, totals.currency)}`
-        : ""
+        ? `Subtotal: ${formatMoneyFromCents(
+            totals.subtotalCents,
+            totals.currency
+          )}`
+        : "";
 
     const message = [
       `New order request — ${brand}`,
@@ -197,19 +234,37 @@ export default function CheckoutPage() {
       subtotalLine ? `\n${subtotalLine}` : "",
     ]
       .filter(Boolean)
-      .join("\n")
+      .join("\n");
 
     const url = buildWhatsAppUrl({
       phoneE164: waNumber.replace(/[^\d]/g, ""),
       message,
-    })
+    });
 
-    setIsSuccess(true)
-    setIsSubmitting(false)
-    clearCart()
+    
+    const itemsToLog = hydratedCart.map((it) => ({
+      product_id: it.id,
+      slug: it.slug,
+      name: it.name,
+      quantity: it.quantity,
+      price_cents: it.price_cents,
+      currency: it.currency,
+      product_url: productUrl(it),
+    }));
 
-    window.location.href = url
-  }
+    await logCheckoutStarted({
+      cartCount: cartLines.length,
+      subtotalCents: totals.subtotalCents ?? 0,
+      items: itemsToLog,
+      message, // optional
+    });
+
+    setIsSuccess(true);
+    setIsSubmitting(false);
+    clearCart();
+
+    window.location.href = url;
+  };
 
   if (isSuccess) {
     return (
@@ -218,34 +273,49 @@ export default function CheckoutPage() {
           <CheckCircle2 className="h-12 w-12 text-green-600" />
         </div>
         <div className="space-y-4">
-          <h1 className="text-4xl font-serif font-bold">Redirecting to WhatsApp…</h1>
+          <h1 className="text-4xl font-serif font-bold">
+            Redirecting to WhatsApp…
+          </h1>
           <p className="text-muted-foreground max-w-md mx-auto text-lg">
-            If WhatsApp didn’t open, please check your popup / redirect settings and try again.
+            If WhatsApp didn’t open, please check your popup / redirect settings
+            and try again.
           </p>
         </div>
         <div className="pt-8">
-          <Button asChild variant="outline" className="rounded-full px-8 bg-transparent">
+          <Button
+            asChild
+            variant="outline"
+            className="rounded-full px-8 bg-transparent"
+          >
             <Link href="/">Return to Home</Link>
           </Button>
         </div>
       </div>
-    )
+    );
   }
 
   return (
     <div className="container mx-auto px-4 md:px-6 py-12 md:py-20">
       <div className="max-w-4xl mx-auto space-y-12">
         <div className="flex items-center gap-4">
-          <Link href="/cart" className="text-muted-foreground hover:text-primary transition-colors">
+          <Link
+            href="/cart"
+            className="text-muted-foreground hover:text-primary transition-colors"
+          >
             <ChevronLeft className="h-6 w-6" />
           </Link>
           <h1 className="text-4xl font-serif font-bold">Checkout</h1>
         </div>
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-16">
+        <form
+          onSubmit={handleSubmit}
+          className="grid grid-cols-1 md:grid-cols-2 gap-16"
+        >
           <div className="space-y-10">
             <div className="space-y-6">
-              <h2 className="text-xl font-bold border-b pb-2">Contact Information</h2>
+              <h2 className="text-xl font-bold border-b pb-2">
+                Contact Information
+              </h2>
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">Email Address</Label>
@@ -275,7 +345,9 @@ export default function CheckoutPage() {
             </div>
 
             <div className="space-y-6">
-              <h2 className="text-xl font-bold border-b pb-2">Shipping Details</h2>
+              <h2 className="text-xl font-bold border-b pb-2">
+                Shipping Details
+              </h2>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">First Name</Label>
@@ -350,8 +422,8 @@ export default function CheckoutPage() {
             <div className="bg-secondary/30 rounded-3xl p-8 space-y-6">
               <h2 className="text-xl font-serif font-bold">Payment Method</h2>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                All transactions are secure and encrypted. You will be redirected to WhatsApp to
-                complete your purchase.
+                All transactions are secure and encrypted. You will be
+                redirected to WhatsApp to complete your purchase.
               </p>
 
               <div className="p-4 border-2 border-primary bg-white rounded-2xl flex items-center justify-between">
@@ -376,7 +448,8 @@ export default function CheckoutPage() {
 
               {!products.length && cartLines.length > 0 && (
                 <p className="text-xs text-muted-foreground">
-                  Loading product details… (links/prices will be included once loaded)
+                  Loading product details… (links/prices will be included once
+                  loaded)
                 </p>
               )}
             </div>
@@ -387,12 +460,13 @@ export default function CheckoutPage() {
                 Secured by SSL Encryption
               </div>
               <p className="text-[10px] text-muted-foreground uppercase tracking-widest leading-relaxed">
-                By completing your order, you agree to our terms of service and privacy policy.
+                By completing your order, you agree to our terms of service and
+                privacy policy.
               </p>
             </div>
           </div>
         </form>
       </div>
     </div>
-  )
+  );
 }
