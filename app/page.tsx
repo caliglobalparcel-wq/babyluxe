@@ -168,7 +168,7 @@ export default async function HomePage() {
         <div className="container mx-auto px-4 md:px-6">
           <div className="grid md:grid-cols-2 gap-16 items-center">
             <div className="relative aspect-4/5 rounded-3xl overflow-hidden shadow-2xl">
-              <Image src="/placeholder.svg?key=7ij6o" alt={`The ${brandName} Process`} fill className="object-cover" />
+              <Image src="https://images.unsplash.com/photo-1761891953461-a33aa8c73593?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt={`The ${brandName} Process`} fill className="object-cover" />
             </div>
 
             <div className="space-y-8">
