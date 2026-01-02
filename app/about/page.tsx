@@ -12,7 +12,7 @@ export default function AboutPage() {
   return (
     <main className="min-h-screen bg-background text-foreground">
       {/* Hero Section */}
-      <section className="relative h-[60vh] min-h-[400px] flex items-center justify-center overflow-hidden">
+      <section className="relative h-[60vh] min-h-100 flex items-center justify-center overflow-hidden">
         <Image
           src="/artist-painting-doll.jpg"
           alt="Artisan painting a silicone baby"
