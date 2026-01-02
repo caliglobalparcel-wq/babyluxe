@@ -47,7 +47,7 @@ export default function AboutPage() {
             </p>
           </div>
           <div className="relative aspect-square rounded-2xl overflow-hidden shadow-2xl">
-            <Image src="/luxury-silicone-baby-in-basket.jpg" alt="Luxury silicone baby" fill className="object-cover" />
+            <Image src="https://images.unsplash.com/photo-1616844017515-1a5f12e0194d?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NjB8fGx1eHVyeSUyMHNpbGljb24lMjBiYWJ5fGVufDB8fDB8fHww" alt="Luxury silicone baby" fill className="object-cover" />
           </div>
         </div>
       </section>
