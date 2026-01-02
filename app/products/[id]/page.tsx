@@ -6,29 +6,27 @@ import { AddToCartButton } from "@/components/add-to-cart-button"
 import { ShieldCheck, Truck, Heart, Undo2 } from "lucide-react"
 import type { Product } from "@/lib/types"
 
-async function getProductBySlug(slug: string): Promise<Product | null> {
+async function getProductById(id: string): Promise<Product | null> {
   const supabase = await getSupabaseServerClient()
-
-  const { data, error } = await supabase
-    .from("products")
-    .select("*")
-    .eq("slug", slug)
-    .eq("status", "active") // only show active products
-    .single()
+  const { data, error } = await supabase.from("products").select("*").eq("id", id).single()
 
   if (error || !data) {
-    // Leave this log in until everything works, then you can remove it.
-    console.error("[getProductBySlug] error or no data:", { slug, error })
+    console.error("[getProductById] error or no data:", { id, error })
     return null
   }
-
   return data as Product
 }
 
-export default async function ProductPage({ params }: { params: { slug: string } }) {
-  const { slug } = params
-  const product = await getProductBySlug(slug)
+export default async function ProductPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const { id } = await params
 
+  if (!id) notFound()
+
+  const product = await getProductById(id)
   if (!product) notFound()
 
   const images = Array.isArray(product.images) ? product.images : []
@@ -37,7 +35,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
   return (
     <div className="container mx-auto px-4 md:px-6 py-12 md:py-20">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start">
-        {/* Images */}
+        {/* Product Images */}
         <div className="space-y-4">
           <div className="relative aspect-square rounded-3xl overflow-hidden bg-slate-100 shadow-xl">
             <Image src={mainImage} alt={product.name} fill className="object-cover" priority />
@@ -62,7 +60,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
           )}
         </div>
 
-        {/* Details */}
+        {/* Product Details */}
         <div className="space-y-10">
           <div className="space-y-4">
             <div className="space-y-2">
@@ -98,7 +96,9 @@ export default async function ProductPage({ params }: { params: { slug: string }
                 <Truck className="h-5 w-5" />
                 <span className="font-bold text-sm uppercase tracking-wider">Shipping</span>
               </div>
-              <p className="text-xs text-muted-foreground">Complimentary global shipping on all luxury silicone dolls.</p>
+              <p className="text-xs text-muted-foreground">
+                Complimentary global shipping on all luxury silicone dolls.
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -106,7 +106,9 @@ export default async function ProductPage({ params }: { params: { slug: string }
                 <ShieldCheck className="h-5 w-5" />
                 <span className="font-bold text-sm uppercase tracking-wider">Authenticity</span>
               </div>
-              <p className="text-xs text-muted-foreground">Each baby comes with a signed Certificate of Authenticity.</p>
+              <p className="text-xs text-muted-foreground">
+                Each baby comes with a signed Certificate of Authenticity.
+              </p>
             </div>
 
             <div className="space-y-2">
