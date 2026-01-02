@@ -22,7 +22,7 @@ export function Header() {
 
   const navLinks = [
     { name: "Home", href: "/" },
-    { name: "Shop All", href: "/products" },
+    { name: "Shop", href: "/products" },
     { name: "Newborns", href: "/products?category=Newborn" },
     { name: "Preemies", href: "/products?category=Preemie" },
   ]
