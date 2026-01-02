@@ -205,7 +205,7 @@ export default function CartPage() {
 
             <div className="pt-4 space-y-4">
               <p className="text-[10px] text-center text-muted-foreground uppercase tracking-widest font-bold">
-                Secure Checkout Powered by Stripe
+                Secure Checkout
               </p>
               <div className="flex justify-center gap-4 grayscale opacity-50">
                 <div className="h-6 w-10 bg-slate-300 rounded" />
