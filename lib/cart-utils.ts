@@ -1,16 +1,17 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
+import type { Product } from "@/lib/types" // adjust path to your types.ts
 
-interface CartItem {
-  productId: string
+export type CartLine = {
+  productId: Product["id"]
   quantity: number
 }
 
 interface CartState {
-  items: CartItem[]
-  addItem: (productId: string) => void
-  removeItem: (productId: string) => void
-  updateQuantity: (productId: string, quantity: number) => void
+  items: CartLine[]
+  addItem: (productId: Product["id"]) => void
+  removeItem: (productId: Product["id"]) => void
+  updateQuantity: (productId: Product["id"], quantity: number) => void
   clearCart: () => void
   getItemCount: () => number
 }
@@ -24,7 +25,9 @@ export const useCartStore = create<CartState>()(
           const existing = state.items.find((i) => i.productId === productId)
           if (existing) {
             return {
-              items: state.items.map((i) => (i.productId === productId ? { ...i, quantity: i.quantity + 1 } : i)),
+              items: state.items.map((i) =>
+                i.productId === productId ? { ...i, quantity: i.quantity + 1 } : i,
+              ),
             }
           }
           return { items: [...state.items, { productId, quantity: 1 }] }
