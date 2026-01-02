@@ -25,7 +25,6 @@ export function Header() {
     { name: "Shop All", href: "/products" },
     { name: "Newborns", href: "/products?category=Newborn" },
     { name: "Preemies", href: "/products?category=Preemie" },
-    { name: "Contact", href: "/contact" },
   ]
 
   return (
@@ -81,10 +80,6 @@ export function Header() {
                 <Phone className="h-5 w-5" />
                 <span className="sr-only">Contact on WhatsApp</span>
               </Link>
-            </Button>
-            <Button variant="ghost" size="icon">
-              <Search className="h-5 w-5" />
-              <span className="sr-only">Search</span>
             </Button>
             <Link href="/cart">
               <Button variant="ghost" size="icon" className="relative">
